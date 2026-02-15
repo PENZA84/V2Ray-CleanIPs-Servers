@@ -43,20 +43,19 @@
 - 🛡 Shield
 - 💎 VIP
 
-> ⚠️ استفاده مسئولانه و مطابق قوانین محل زندگی شما.
-
 ---
 
 ## 📡 Subscription Links
 
-| Plan | Direct Link |
-|------|-------------|
-| ⭐ **Star** | https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/star.txt |
-| 🚀 **Rocket** | https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/rocket.txt |
-| 🛡 **Shield** | https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/shield.txt |
-| 💎 **VIP** | https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/vip.txt |
+| Plan | GitHub | Direct | Copy |
+|------|--------|--------|------|
+| ⭐ **Star** | [GitHub](https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/star.txt) | [Direct](https://free-sub.indevs.in/star) | `https://free-sub.indevs.in/star` |
+| 🚀 **Rocket** | [GitHub](https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/rocket.txt) | [Direct](https://free-sub.indevs.in/rocket) | `https://free-sub.indevs.in/rocket` |
+| 🛡 **Shield** | [GitHub](https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/shield.txt) | [Direct](https://free-sub.indevs.in/shield) | `https://free-sub.indevs.in/shield` |
+| 💎 **VIP** | [GitHub](https://raw.githubusercontent.com/idtheo/V2Ray-CleanIPs-Servers/main/vip.txt) | [Direct](https://free-sub.indevs.in/vip) | `https://free-sub.indevs.in/vip` |
 
 ---
+
 
 ## 📌 How to use
 
