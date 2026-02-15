@@ -56,7 +56,7 @@
 کلاینت پیشنهادی ما: **Karing**
 
 دانلود رسمی از ریلیزهای گیت‌هاب:  
-👉 https://github.com/KaringX/karing/releases
+- https://github.com/KaringX/karing/releases
 
 (سازگار با VLESS / Trojan / Shadowsocks / Hysteria2)
 
