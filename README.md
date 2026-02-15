@@ -38,12 +38,30 @@
 
 این ریپو شامل ۴ لینک Subscription است که به صورت خودکار هر **۳ ساعت** آپدیت می‌شوند.
 
-- ⭐ Star
-- 🚀 Rocket
-- 🛡 Shield
-- 💎 VIP
+### 📦 Plans
+
+- ⭐ **Star**  
+  شامل پروتکل‌های:  
+  `VLESS` + `Trojan` + `Shadowsocks` + `Hysteria2 (hy2)`
+
+- 🚀 **Rocket**  
+- 🛡 **Shield**  
+- 💎 **VIP**  
+
+سه پلن بالا 👆 فقط شامل کانفیگ‌های `VLESS` هستند .
+---
+
+### 💡 Suggested Client
+
+کلاینت پیشنهادی ما: **Karing**
+
+دانلود رسمی از ریلیزهای گیت‌هاب:  
+👉 https://github.com/KaringX/karing/releases
+
+(سازگار با VLESS / Trojan / Shadowsocks / Hysteria2)
 
 ---
+
 
 ## 📡 Subscription Links
 
