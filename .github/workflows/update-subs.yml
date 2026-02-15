@@ -31,8 +31,8 @@ jobs:
           BASE_URL="https://free-sub.indevs.in"
 
           fetch_any () {
-            local key="$1"       # star / rocket / shield / vip
-            local outfile="$2"   # star.txt / ...
+            local key="$1"
+            local outfile="$2"
             local url="${BASE_URL}/${key}"
 
             echo "Updating ${outfile} from ${url}"
@@ -40,7 +40,6 @@ jobs:
             local tmp
             tmp="$(mktemp)"
 
-            # Try curl first
             if curl -fsSL \
               --compressed \
               --connect-timeout 15 \
@@ -53,7 +52,6 @@ jobs:
               -H "Cache-Control: no-cache" \
               "$url" > "$tmp"; then
               :
-            # Fallback to wget
             elif wget -qO "$tmp" \
               --timeout=60 \
               --tries=4 \
@@ -62,11 +60,10 @@ jobs:
               "$url"; then
               :
             else
-              # If both fail, write a simple message instead of failing the workflow
               printf "FETCH FAILED\n%s\nUTC: %s\n" "$url" "$(date -u '+%Y-%m-%d %H:%M:%S')" > "$tmp"
             fi
 
-            # Ensure file ends with newline (safe with set -euo pipefail)
+            # Ensure file ends with newline
             if [[ "$(tail -c1 "$tmp" 2>/dev/null || true)" != $'\n' ]]; then
               echo >> "$tmp"
             fi
@@ -79,7 +76,7 @@ jobs:
           fetch_any "shield" "shield.txt"
           fetch_any "vip"    "vip.txt"
 
-      - name: Commit & push if changed
+      - name: Commit & push (always)
         shell: bash
         run: |
           set -euo pipefail
@@ -87,12 +84,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+          # Stage files (always)
           git add star.txt rocket.txt shield.txt vip.txt
 
-          if git diff --cached --quiet; then
-            echo "No changes."
-            exit 0
-          fi
+          # Create a commit even if there are no content changes
+          git commit --allow-empty -m "chore: update subscription files (auto)"
 
-          git commit -m "chore: update subscription files"
+          # Push to main
           git push origin HEAD:main
