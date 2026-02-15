@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */3 * * *"   # every 3 hours (at minute 0)
+    - cron: "0 */3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -33,7 +33,11 @@ jobs:
           fetch_any () {
             local key="$1"
             local outfile="$2"
-            local url="${BASE_URL}/${key}"
+
+            # cache-bust query to defeat upstream caches
+            local ts
+            ts="$(date +%s)"
+            local url="${BASE_URL}/${key}?t=${ts}"
 
             echo "Updating ${outfile} from ${url}"
 
@@ -50,6 +54,7 @@ jobs:
               -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
               -H "Accept: */*" \
               -H "Cache-Control: no-cache" \
+              -H "Pragma: no-cache" \
               "$url" > "$tmp"; then
               :
             elif wget -qO "$tmp" \
@@ -57,13 +62,18 @@ jobs:
               --tries=4 \
               --header="User-Agent: Mozilla/5.0 (GitHub Actions)" \
               --header="Cache-Control: no-cache" \
+              --header="Pragma: no-cache" \
               "$url"; then
               :
             else
               printf "FETCH FAILED\n%s\nUTC: %s\n" "$url" "$(date -u '+%Y-%m-%d %H:%M:%S')" > "$tmp"
             fi
 
-            # Ensure file ends with newline
+            # log a tiny debug summary so we can see rocket/shield content size
+            echo "[$key] bytes: $(wc -c < "$tmp" | tr -d ' ')"
+            echo "[$key] first line: $(head -n 1 "$tmp" | tr -d '\r')"
+
+            # Ensure newline at end
             if [[ "$(tail -c1 "$tmp" 2>/dev/null || true)" != $'\n' ]]; then
               echo >> "$tmp"
             fi
@@ -84,11 +94,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage files (always)
           git add star.txt rocket.txt shield.txt vip.txt
-
-          # Create a commit even if there are no content changes
           git commit --allow-empty -m "chore: update subscription files (auto)"
-
-          # Push to main
           git push origin HEAD:main
