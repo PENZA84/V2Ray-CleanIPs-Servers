@@ -65,7 +65,7 @@ jobs:
             mv "$tmp" "$outfile"
           }
 
-          fetch_or_fallback "stars"   "star.txt"
+          fetch_or_fallback "star"   "star.txt"
           fetch_or_fallback "rocket" "rocket.txt"
           fetch_or_fallback "shield" "shield.txt"
           fetch_or_fallback "vip"    "vip.txt"
