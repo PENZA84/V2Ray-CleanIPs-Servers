@@ -3,10 +3,10 @@ name: Update subscription files
 on:
   push:
     branches:
-      - main   # وقتی همین الان commit کنی اجرا میشه
+      - main
   schedule:
-    - cron: "0 */3 * * *"   # هر 3 ساعت
-  workflow_dispatch:        # اجرای دستی
+    - cron: "0 */3 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -23,14 +23,48 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update files
+      - name: Update files (with retries + fallback message)
+        shell: bash
         run: |
+          set -euo pipefail
+
           BASE_URL="https://free-sub.indevs.in"
 
-          curl -L "$BASE_URL/star"   -o star.txt
-          curl -L "$BASE_URL/rocket" -o rocket.txt
-          curl -L "$BASE_URL/shield" -o shield.txt
-          curl -L "$BASE_URL/vip"    -o vip.txt
+          fetch_or_fallback () {
+            local key="$1"      # star / rocket / shield / vip
+            local out="$2"      # star.txt ...
+            local url="${BASE_URL}/${key}"
+            local tmp="${out}.tmp"
+
+            # چند بار تلاش (با timeout، retry، و fail روی کدهای 4xx/5xx)
+            # اگر دانلود شد ولی خالی بود هم fail حساب می‌کنیم
+            if curl -fsSL \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --retry 5 \
+              --retry-delay 2 \
+              --retry-all-errors \
+              -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
+              "$url" -o "$tmp" \
+              && [ -s "$tmp" ]; then
+
+              mv "$tmp" "$out"
+              echo "✅ Updated $out from $url"
+            else
+              rm -f "$tmp"
+              cat > "$out" <<EOF
+# Update failed for: ${key}
+# Please fetch manually from:
+${url}
+EOF
+              echo "⚠️ Failed to fetch $url -> wrote fallback message into $out"
+            fi
+          }
+
+          fetch_or_fallback "star"   "star.txt"
+          fetch_or_fallback "rocket" "rocket.txt"
+          fetch_or_fallback "shield" "shield.txt"
+          fetch_or_fallback "vip"    "vip.txt"
 
       - name: Commit & push if changed
         run: |
