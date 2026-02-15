@@ -1,9 +1,12 @@
 name: Update subscription files
 
 on:
+  push:
+    branches:
+      - main   # وقتی همین الان commit کنی اجرا میشه
   schedule:
-    - cron: "0 */3 * * *"   # every 3 hours
-  workflow_dispatch:
+    - cron: "0 */3 * * *"   # هر 3 ساعت
+  workflow_dispatch:        # اجرای دستی
 
 permissions:
   contents: write
@@ -15,61 +18,19 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
       - name: Update files
-        env:
-          BASE_URL: "https://free-sub.indevs.in"
         run: |
-          python - << 'PY'
-          import os, sys, urllib.request
+          BASE_URL="https://free-sub.indevs.in"
 
-          base = os.environ.get("BASE_URL", "").rstrip("/")
-          mapping = {
-            "star": "star.txt",
-            "rocket": "rocket.txt",
-            "shield": "shield.txt",
-            "vip": "vip.txt",
-          }
-
-          def fetch(url: str) -> str:
-            req = urllib.request.Request(
-              url,
-              headers={
-                "User-Agent": "Mozilla/5.0 (GitHub Actions)",
-                "Accept": "*/*",
-              },
-              method="GET",
-            )
-            with urllib.request.urlopen(req, timeout=30) as r:
-              data = r.read()
-            # decode safely
-            return data.decode("utf-8", errors="replace").strip() + "\n"
-
-          failed = []
-          for key, out_file in mapping.items():
-            url = f"{base}/{key}"
-            try:
-              content = fetch(url)
-              with open(out_file, "w", encoding="utf-8", newline="\n") as f:
-                f.write(content)
-              print(f"Updated {out_file} from {url}")
-            except Exception as e:
-              failed.append((key, str(e)))
-              print(f"FAILED {key}: {e}", file=sys.stderr)
-
-          if failed:
-            print("Some fetches failed:", failed, file=sys.stderr)
-            # Exit non-zero so you notice problems in Actions logs
-            sys.exit(1)
-          PY
+          curl -L "$BASE_URL/star"   -o star.txt
+          curl -L "$BASE_URL/rocket" -o rocket.txt
+          curl -L "$BASE_URL/shield" -o shield.txt
+          curl -L "$BASE_URL/vip"    -o vip.txt
 
       - name: Commit & push if changed
         run: |
