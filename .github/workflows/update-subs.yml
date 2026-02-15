@@ -31,7 +31,7 @@ jobs:
           BASE_URL="https://free-sub.indevs.in"
 
           fetch_or_fallback () {
-            local key="$1"          # stars / rocket / shield / vip
+            local key="$1"          # star / rocket / shield / vip
             local outfile="$2"      # star.txt / ...
             local url="${BASE_URL}/${key}"
 
@@ -65,7 +65,7 @@ jobs:
             mv "$tmp" "$outfile"
           }
 
-          fetch_or_fallback "star"   "star.txt"
+          fetch_or_fallback "stars"   "star.txt"
           fetch_or_fallback "rocket" "rocket.txt"
           fetch_or_fallback "shield" "shield.txt"
           fetch_or_fallback "vip"    "vip.txt"
