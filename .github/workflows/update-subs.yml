@@ -30,6 +30,30 @@ jobs:
 
           BASE_URL="https://free-sub.indevs.in"
 
+          is_valid_sub() {
+            local f="$1"
+
+            # Reject empty/tiny files
+            if [[ ! -s "$f" ]]; then
+              return 1
+            fi
+            if [[ $(wc -c <"$f") -lt 40 ]]; then
+              return 1
+            fi
+
+            # Reject obvious HTML / block pages
+            if grep -qiE '^\s*<!doctype html|^\s*<html|cloudflare|attention required|access denied|forbidden|captcha' "$f"; then
+              return 1
+            fi
+
+            # Accept if it contains at least one common config scheme
+            if grep -qiE '(vmess|vless|trojan|ss|ssr|hysteria2|hy2|tuic)://' "$f"; then
+              return 0
+            fi
+
+            return 1
+          }
+
           fetch_or_fallback () {
             local key="$1"          # star / rocket / shield / vip
             local outfile="$2"      # star.txt / ...
@@ -37,29 +61,37 @@ jobs:
 
             echo "Updating ${outfile} from ${url}"
 
-            # temp file so we don't overwrite good content with partial downloads
             local tmp
             tmp="$(mktemp)"
 
-            # Try multiple times with curl (standard, no bypass tricks)
+            # Try multiple times with curl (normal retries)
             if curl -fsSL \
+                --compressed \
                 --connect-timeout 15 \
                 --max-time 60 \
-                --retry 5 \
+                --retry 6 \
                 --retry-delay 2 \
                 --retry-all-errors \
+                -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
+                -H "Accept: */*" \
+                -H "Cache-Control: no-cache" \
                 "$url" > "$tmp"; then
               :
-            # Fallback to wget (second standard method)
-            elif wget -qO "$tmp" --timeout=60 --tries=3 "$url"; then
+            # Fallback to wget
+            elif wget -qO "$tmp" --timeout=60 --tries=4 --header="Cache-Control: no-cache" "$url"; then
               :
             else
-              # If all attempts fail, write a clear message into the file
-              printf "Auto-update failed.\nPlease fetch it manually from:\n%s\n" "$url" > "$tmp"
+              : # handled below by validation
             fi
 
-            # Ensure file ends with newline and uses LF
-            # (If the fetched file already has newlines, this is harmless)
+            # If content is not valid, write a clear fallback message (WITH timestamp)
+            if ! is_valid_sub "$tmp"; then
+              printf "Auto-update failed or returned invalid content.\n" > "$tmp"
+              printf "Please fetch manually from:\n%s\n\n" "$url" >> "$tmp"
+              printf "Last attempt (UTC): %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S')" >> "$tmp"
+            fi
+
+            # Ensure file ends with newline
             tail -c1 "$tmp" | read -r _ || echo >> "$tmp"
 
             mv "$tmp" "$outfile"
