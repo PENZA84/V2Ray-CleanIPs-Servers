@@ -30,28 +30,18 @@ jobs:
 
           BASE_URL="https://free-sub.indevs.in"
 
-          is_valid_sub() {
+          is_valid_payload() {
             local f="$1"
 
-            # Reject empty/tiny files
-            if [[ ! -s "$f" ]]; then
-              return 1
-            fi
-            if [[ $(wc -c <"$f") -lt 40 ]]; then
-              return 1
-            fi
+            # must not be empty
+            [[ -s "$f" ]] || return 1
 
-            # Reject obvious HTML / block pages
+            # reject obvious HTML / block pages
             if grep -qiE '^\s*<!doctype html|^\s*<html|cloudflare|attention required|access denied|forbidden|captcha' "$f"; then
               return 1
             fi
 
-            # Accept if it contains at least one common config scheme
-            if grep -qiE '(vmess|vless|trojan|ss|ssr|hysteria2|hy2|tuic)://' "$f"; then
-              return 0
-            fi
-
-            return 1
+            return 0
           }
 
           fetch_or_fallback () {
@@ -64,7 +54,7 @@ jobs:
             local tmp
             tmp="$(mktemp)"
 
-            # Try multiple times with curl (normal retries)
+            # Try with curl (with retries)
             if curl -fsSL \
                 --compressed \
                 --connect-timeout 15 \
@@ -81,12 +71,13 @@ jobs:
             elif wget -qO "$tmp" --timeout=60 --tries=4 --header="Cache-Control: no-cache" "$url"; then
               :
             else
-              : # handled below by validation
+              # if both tools fail, tmp might be empty; handled below
+              :
             fi
 
-            # If content is not valid, write a clear fallback message (WITH timestamp)
-            if ! is_valid_sub "$tmp"; then
-              printf "Auto-update failed or returned invalid content.\n" > "$tmp"
+            # Validate only "not empty & not HTML block page"
+            if ! is_valid_payload "$tmp"; then
+              printf "Auto-update failed or returned blocked/invalid content.\n" > "$tmp"
               printf "Please fetch manually from:\n%s\n\n" "$url" >> "$tmp"
               printf "Last attempt (UTC): %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S')" >> "$tmp"
             fi
