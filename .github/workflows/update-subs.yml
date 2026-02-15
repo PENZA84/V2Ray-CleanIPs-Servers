@@ -30,23 +30,9 @@ jobs:
 
           BASE_URL="https://free-sub.indevs.in"
 
-          is_valid_payload() {
-            local f="$1"
-
-            # must not be empty
-            [[ -s "$f" ]] || return 1
-
-            # reject obvious HTML / block pages
-            if grep -qiE '^\s*<!doctype html|^\s*<html|cloudflare|attention required|access denied|forbidden|captcha' "$f"; then
-              return 1
-            fi
-
-            return 0
-          }
-
-          fetch_or_fallback () {
-            local key="$1"          # star / rocket / shield / vip
-            local outfile="$2"      # star.txt / ...
+          fetch_any () {
+            local key="$1"       # star / rocket / shield / vip
+            local outfile="$2"   # star.txt / ...
             local url="${BASE_URL}/${key}"
 
             echo "Updating ${outfile} from ${url}"
@@ -54,47 +40,50 @@ jobs:
             local tmp
             tmp="$(mktemp)"
 
-            # Try with curl (with retries)
+            # Try curl first
             if curl -fsSL \
-                --compressed \
-                --connect-timeout 15 \
-                --max-time 60 \
-                --retry 6 \
-                --retry-delay 2 \
-                --retry-all-errors \
-                -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
-                -H "Accept: */*" \
-                -H "Cache-Control: no-cache" \
-                "$url" > "$tmp"; then
+              --compressed \
+              --connect-timeout 15 \
+              --max-time 60 \
+              --retry 6 \
+              --retry-delay 2 \
+              --retry-all-errors \
+              -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
+              -H "Accept: */*" \
+              -H "Cache-Control: no-cache" \
+              "$url" > "$tmp"; then
               :
             # Fallback to wget
-            elif wget -qO "$tmp" --timeout=60 --tries=4 --header="Cache-Control: no-cache" "$url"; then
+            elif wget -qO "$tmp" \
+              --timeout=60 \
+              --tries=4 \
+              --header="User-Agent: Mozilla/5.0 (GitHub Actions)" \
+              --header="Cache-Control: no-cache" \
+              "$url"; then
               :
             else
-              # if both tools fail, tmp might be empty; handled below
-              :
+              # If both fail, write a simple message instead of failing the workflow
+              printf "FETCH FAILED\n%s\nUTC: %s\n" "$url" "$(date -u '+%Y-%m-%d %H:%M:%S')" > "$tmp"
             fi
 
-            # Validate only "not empty & not HTML block page"
-            if ! is_valid_payload "$tmp"; then
-              printf "Auto-update failed or returned blocked/invalid content.\n" > "$tmp"
-              printf "Please fetch manually from:\n%s\n\n" "$url" >> "$tmp"
-              printf "Last attempt (UTC): %s\n" "$(date -u '+%Y-%m-%d %H:%M:%S')" >> "$tmp"
+            # Ensure file ends with newline (safe with set -euo pipefail)
+            if [[ "$(tail -c1 "$tmp" 2>/dev/null || true)" != $'\n' ]]; then
+              echo >> "$tmp"
             fi
-
-            # Ensure file ends with newline
-            tail -c1 "$tmp" | read -r _ || echo >> "$tmp"
 
             mv "$tmp" "$outfile"
           }
 
-          fetch_or_fallback "star"   "star.txt"
-          fetch_or_fallback "rocket" "rocket.txt"
-          fetch_or_fallback "shield" "shield.txt"
-          fetch_or_fallback "vip"    "vip.txt"
+          fetch_any "star"   "star.txt"
+          fetch_any "rocket" "rocket.txt"
+          fetch_any "shield" "shield.txt"
+          fetch_any "vip"    "vip.txt"
 
       - name: Commit & push if changed
+        shell: bash
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
@@ -106,4 +95,4 @@ jobs:
           fi
 
           git commit -m "chore: update subscription files"
-          git push
+          git push origin HEAD:main
