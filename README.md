@@ -9,7 +9,7 @@
 <p align="center">
   Auto-updated V2Ray / Xray subscription service
   <br/>
-  <sub>سرویس سابسکریپشن V2Ray / Xray با آپدیت خودکار هر ۳ ساعت</sub>
+  <sub>سرویس سابسکریپشن با آپدیت خودکار هر ۳ ساعت</sub>
 </p>
 
 <img alt="Update" src="https://img.shields.io/badge/Update-Every%203%20Hours-ff69b4?style=for-the-badge" />
