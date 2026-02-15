@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: "0 */3 * * *"
+    - cron: "0 */3 * * *"   # every 3 hours (at minute 0)
   workflow_dispatch:
 
 permissions:
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Update files (with retries + fallback message)
+      - name: Update files
         shell: bash
         run: |
           set -euo pipefail
@@ -31,34 +31,38 @@ jobs:
           BASE_URL="https://free-sub.indevs.in"
 
           fetch_or_fallback () {
-            local key="$1"      # star / rocket / shield / vip
-            local out="$2"      # star.txt ...
+            local key="$1"          # star / rocket / shield / vip
+            local outfile="$2"      # star.txt / ...
             local url="${BASE_URL}/${key}"
-            local tmp="${out}.tmp"
 
-            # چند بار تلاش (با timeout، retry، و fail روی کدهای 4xx/5xx)
-            # اگر دانلود شد ولی خالی بود هم fail حساب می‌کنیم
+            echo "Updating ${outfile} from ${url}"
+
+            # temp file so we don't overwrite good content with partial downloads
+            local tmp
+            tmp="$(mktemp)"
+
+            # Try multiple times with curl (standard, no bypass tricks)
             if curl -fsSL \
-              --connect-timeout 10 \
-              --max-time 30 \
-              --retry 5 \
-              --retry-delay 2 \
-              --retry-all-errors \
-              -H "User-Agent: Mozilla/5.0 (GitHub Actions)" \
-              "$url" -o "$tmp" \
-              && [ -s "$tmp" ]; then
-
-              mv "$tmp" "$out"
-              echo "✅ Updated $out from $url"
+                --connect-timeout 15 \
+                --max-time 60 \
+                --retry 5 \
+                --retry-delay 2 \
+                --retry-all-errors \
+                "$url" > "$tmp"; then
+              :
+            # Fallback to wget (second standard method)
+            elif wget -qO "$tmp" --timeout=60 --tries=3 "$url"; then
+              :
             else
-              rm -f "$tmp"
-              cat > "$out" <<EOF
-# Update failed for: ${key}
-# Please fetch manually from:
-${url}
-EOF
-              echo "⚠️ Failed to fetch $url -> wrote fallback message into $out"
+              # If all attempts fail, write a clear message into the file
+              printf "Auto-update failed.\nPlease fetch it manually from:\n%s\n" "$url" > "$tmp"
             fi
+
+            # Ensure file ends with newline and uses LF
+            # (If the fetched file already has newlines, this is harmless)
+            tail -c1 "$tmp" | read -r _ || echo >> "$tmp"
+
+            mv "$tmp" "$outfile"
           }
 
           fetch_or_fallback "star"   "star.txt"
