@@ -1,4 +1,4 @@
 FETCH FAILED
-https://free-sub.indevs.in/shield?t=1775702475
-UTC: 2026-04-09 02:41:28
+https://free-sub.indevs.in/shield?t=1775711601
+UTC: 2026-04-09 05:13:33
 
